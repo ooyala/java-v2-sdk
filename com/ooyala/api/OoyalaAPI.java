@@ -62,7 +62,12 @@ import org.json.simple.parser.ParseException;
  * Please keep in mind that when creating your HashMap to send the JSON body, align to using Maps and Lists as the Simple.JSON library indicates.
  * */
 public class OoyalaAPI {
-
+    
+    /**
+     * The API charset to encode bytes
+     */
+    private static final String apiCharset = "ISO-8859-1";
+    
     /**
      * the Secret key
      */
@@ -249,7 +254,7 @@ public class OoyalaAPI {
         MessageDigest digestProvider = MessageDigest.getInstance("SHA-256");
         digestProvider.reset();
 
-        byte[] digest = digestProvider.digest(stringToSign.getBytes());
+        byte[] digest = digestProvider.digest(stringToSign.getBytes(apiCharset));
         String signedInput = base64Encoder.encodeBase64String(digest);
 
         return encodeURI(signedInput.substring(0, 43));
@@ -453,7 +458,7 @@ public class OoyalaAPI {
      * @throws HttpStatusCodeException 
      */
     public Object sendRequest(String HTTPMethod, String requestPath, HashMap<String, String> parameters, byte[] requestBody) throws NoSuchAlgorithmException, ClientProtocolException, IOException, HttpStatusCodeException {
-        String url = generateURLWithAuthenticationParameters(HTTPMethod, requestPath, parameters, new String(requestBody));
+        String url = generateURLWithAuthenticationParameters(HTTPMethod, requestPath, parameters, new String(requestBody, apiCharset));
         System.out.println(url);
         HttpRequestBase method = getHttpMethod(HTTPMethod,url, new ByteArrayEntity(requestBody));
         return executeRequest(method);
