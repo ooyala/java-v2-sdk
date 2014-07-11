@@ -333,7 +333,7 @@ public class OoyalaAPI {
     	
         String url = generateURLWithAuthenticationParameters(HTTPMethod, requestPath, parameters, jsonBody);
         
-        HttpRequestBase method = getHttpMethod(HTTPMethod,url, new StringEntity(jsonBody));
+        HttpRequestBase method = getHttpMethod(HTTPMethod, url, new StringEntity(jsonBody, apiCharset));
         return executeRequest(method);
     }
 
