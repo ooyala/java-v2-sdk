@@ -3,7 +3,7 @@ package com.ooyala.api;
 public class HttpStatusCodeException extends Exception {
     private String response;
     private int code;
-    
+
     protected static final long serialVersionUID = 1;
 
     public HttpStatusCodeException(String response, int code) {
