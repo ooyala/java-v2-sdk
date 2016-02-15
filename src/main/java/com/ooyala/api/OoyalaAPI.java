@@ -19,7 +19,6 @@ package com.ooyala.api;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.*;
@@ -287,7 +286,7 @@ public class OoyalaAPI {
      */
     private ResponseHandler<String> createResponseHandler() {
         return new ResponseHandler<String>() {
-            public String handleResponse(HttpResponse response) throws ClientProtocolException, IOException {
+            public String handleResponse(HttpResponse response) throws IOException {
                 HttpEntity entity = response.getEntity();
                 responseCode = response.getStatusLine().getStatusCode();
                 if (entity != null) {
@@ -305,7 +304,6 @@ public class OoyalaAPI {
      * @param URL The URL where the request is made
      * @param requestBody The request's body as an array of bytes
      * @return The response from the server as an object of class Object. Must be casted to either a LinkedList<String> or an HashMap<String, Object>
-     * @throws ClientProtocolException
      * @throws IOException
      * @throws HttpStatusCodeException
      */
@@ -325,7 +323,6 @@ public class OoyalaAPI {
      * @return The response from the server as an object of class Object. Must be casted to either a LinkedList<String> or an HashMap<String, Object>
      * @throws NoSuchAlgorithmException
      * @throws IOException
-     * @throws ClientProtocolException
      * @throws HttpStatusCodeException
      */
     @SuppressWarnings("rawtypes")
@@ -352,7 +349,6 @@ public class OoyalaAPI {
      * @param requestPath the request path
      * @return The response from the server as an object of class Object. Must be casted to either a LinkedList<String> or an HashMap<String, Object>
      * @throws IOException
-     * @throws ClientProtocolException
      * @throws NoSuchAlgorithmException
      * @throws HttpStatusCodeException
      */
@@ -418,7 +414,6 @@ public class OoyalaAPI {
      * @param method The class containing the type of request (HttpGet, HttpDelete, etc)
      * @return The response from the server as an object of class Object. Must be casted to
      * either a LinkedList<String> or an HashMap<String, Object>
-     * @throws ClientProtocolException
      * @throws IOException
      * @throws HttpStatusCodeException
      */
@@ -469,7 +464,6 @@ public class OoyalaAPI {
      * a LinkedList<String> or an HashMap<String, Object>
      * @throws NoSuchAlgorithmException
      * @throws IOException
-     * @throws ClientProtocolException
      * @throws HttpStatusCodeException
      */
     public Object sendRequest(String HTTPMethod, String requestPath, HashMap<String, String> parameters,
@@ -529,7 +523,6 @@ public class OoyalaAPI {
      * @param requestBody The request's body
      * @return The response from the server as an object of class Object. Must be casted to either a LinkedList<String> or an HashMap<String, Object>
      * @throws IOException
-     * @throws ClientProtocolException
      * @throws NoSuchAlgorithmException
      * @throws HttpStatusCodeException
      */
@@ -545,7 +538,6 @@ public class OoyalaAPI {
      * @param parameters hashtable containing query parameters
      * @return The response from the server as an object of class Object. Must be casted to either a LinkedList<String> or an HashMap<String, Object>
      * @throws IOException
-     * @throws ClientProtocolException
      * @throws NoSuchAlgorithmException
      * @throws HttpStatusCodeException
      */
@@ -560,7 +552,6 @@ public class OoyalaAPI {
      * @param requestPath The request path
      * @return The response from the server as an object of class Object. Must be casted to either a LinkedList<String> or an HashMap<String, Object>
      * @throws IOException
-     * @throws ClientProtocolException
      * @throws NoSuchAlgorithmException
      * @throws HttpStatusCodeException
      */
@@ -576,7 +567,6 @@ public class OoyalaAPI {
      * @param requestBody The request's body
      * @return The response from the server as an object of class Object. Must be casted to either a LinkedList<String> or an HashMap<String, Object>
      * @throws IOException
-     * @throws ClientProtocolException
      * @throws NoSuchAlgorithmException
      * @throws HttpStatusCodeException
      */
@@ -591,7 +581,6 @@ public class OoyalaAPI {
      * @param requestPath The request path
      * @return The response from the server as an object of class Object. Must be casted to either a LinkedList<String> or an HashMap<String, Object>
      * @throws IOException
-     * @throws ClientProtocolException
      * @throws NoSuchAlgorithmException
      * @throws HttpStatusCodeException
      */
@@ -607,7 +596,6 @@ public class OoyalaAPI {
      * @param requestPath The request path
      * @param requestBody The patch to be sent
      * @return The response from the server as an object of class Object. Must be casted to either a LinkedList<String> or an HashMap<String, Object>
-     * @throws ClientProtocolException
      * @throws IOException
      * @throws NoSuchAlgorithmException
      * @throws HttpStatusCodeException
