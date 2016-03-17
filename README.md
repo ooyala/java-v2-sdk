@@ -1,17 +1,17 @@
-The Java SDK is a client class for our V2 API. The approach is very simple. 
-It allows you to do GET, POST, PUT, PATCH and DELETE requests to our API by simply 
+JAVA client for ooyala V2 HTTP API
+==================================
+
+The approach is very simple. It allows you to do GET, POST, PUT, PATCH and DELETE requests to our API by simply
 specifying the path to the API you want to hit and depending of the call, a two more 
 hashes which depending on the request, they contain the query parameters or the request's body.
 
-To get up and running using the API client, you need to reference the jars on the lib folder on your project:
-
-+ commons-codec-1.4.jar
-+ commons-logging-1.1.1.jar
-+ httpclient-4.1.2.jar
-+ httpclient-cache-4.1.2.jar
-+ httpcore-4.1.2.jar
-+ httpmime-4.1.2.jar
-+ json_simple-1.1.jar
+Build
+-----
+  
+    mvn package
+    
+Example
+-------
 
 First you need to create an OoyalaAPI object by passing your V2 API keys like this:
 
