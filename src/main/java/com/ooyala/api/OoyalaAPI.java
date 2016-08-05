@@ -16,7 +16,6 @@
 
 package com.ooyala.api;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -34,8 +33,6 @@ import org.json.simple.parser.ParseException;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
@@ -47,11 +44,6 @@ import java.util.*;
  * Please keep in mind that when creating your HashMap to send the JSON body, align to using Maps and Lists as the Simple.JSON library indicates.
  * */
 public class OoyalaAPI {
-
-    /**
-     * The API charset to encode bytes
-     */
-    private static final String apiCharset = "ISO-8859-1";
 
     /**
      * the Secret key
@@ -82,42 +74,29 @@ public class OoyalaAPI {
     private String baseURL;
 
     /**
-     * Holds the instance of a BASE64 encoder for performance.
-     */
-    private Base64 base64Encoder;
-
-    /**
      * Represents the HTTP Status Code from the last response
      */
     private int responseCode;
 
-    /**
-     * Value (in seconds) which indicates the (time) 'window' where the request remains valid. Defaults: 15
-     */
-    public long expirationWindow;
 
-    /**
-     * Round-up time value. Defaults: 300
-     */
-    public long roundUpTime;
 
     /**
      * The request's content type
      */
     private String contentType;
 
+    private SignatureGenerator signatureGenerator;
+
     /**
      * Constructor with keys
      * @param apiKey The API key
      * @param secretKey The secret key
      */
-    public OoyalaAPI(String apiKey, String secretKey) {
+    public OoyalaAPI(String apiKey, String secretKey) throws NoSuchAlgorithmException {
         this.secretKey = secretKey;
         this.apiKey = apiKey;
-        baseURL = "https://api.ooyala.com/v2/";
-        expirationWindow = 15;
-        roundUpTime = 300;
-        base64Encoder = new Base64();
+        this.signatureGenerator = new SignatureGenerator(apiKey, secretKey);
+        baseURL = "https://api.ooyala.com";
         contentType = "application/json";
     }
 
@@ -179,16 +158,6 @@ public class OoyalaAPI {
     }
 
     /**
-     * Get expiration date (in seconds).
-     * @return the expiration date in seconds
-     */
-    public long getExpiration() {
-        long nowPlusWindow = System.currentTimeMillis() / 1000 + expirationWindow;
-        long roundUp = roundUpTime - (nowPlusWindow % roundUpTime);
-        return (nowPlusWindow + roundUp);
-    }
-
-    /**
      * Get the request's content type
      * @return The request's content type
      */
@@ -202,82 +171,6 @@ public class OoyalaAPI {
      */
     public void setContentType(String contentType) {
         this.contentType = contentType;
-    }
-
-    /**
-     * Concatenates the key-values of parameters using a separator in between
-     *
-     * @param parameters HashMap with the key-value elements to be concatenated
-     * @param separator The separator (a char) which is added between hash elements
-     * @return the concatenated string
-     */
-    private String concatenateParams(HashMap<String, String> parameters, String separator) {
-        Vector<String> keys = new Vector<String>(parameters.keySet());
-        Collections.sort(keys);
-
-        String string = "";
-        for (Enumeration<String> e = keys.elements(); e.hasMoreElements(); ) {
-            String key = (String) e.nextElement();
-            String value = (String) parameters.get(key);
-            if (!string.isEmpty())
-                string += separator;
-            string += key + "=" + value;
-        }
-        return string;
-    }
-
-    /**
-     * Encodes a String to be URI friendly.
-     * @param input The String to encode.
-     * @return The encoded String.
-     * @throws java.io.UnsupportedEncodingException if the encoding as US-ASCII is not supported.
-     */
-    private String encodeURI(String input) throws java.io.UnsupportedEncodingException {
-        return URLEncoder.encode(input, "US-ASCII");
-    }
-
-    /**
-     * Generates the signature for a request, using a body in the request.
-     * If the method is a GET, then it does not need the body. On the other hand
-     * if it is a POST, PUT or PATCH, the body is a string with the parameters that
-     * are going to be modified, or assigned to the resource.
-     * This should be later added to the query parameters,
-     * as the signature parameter of the desired requested URI.
-     *
-     * @param HTTPMethod The method of the request (GET, POST, PUT, PATCH).
-     * @param requestPath The path of the request (i.e. /v2/players).
-     * @param parameters The query parameters.
-     * @param requestBody The body of the request, used for POST, PUT and PATCH.
-     * @return The signature that should be added to the request URI as the signature parameter.
-     * @throws NoSuchAlgorithmException if the SHA256 algorithm is not available.
-     * @throws IOException
-     */
-
-    public String generateSignature(String HTTPMethod, String requestPath, HashMap<String, String> parameters, String requestBody) throws NoSuchAlgorithmException, IOException {
-        String stringToSign = secretKey + HTTPMethod + "/v2/" + requestPath;
-        stringToSign += concatenateParams(parameters, "");
-        stringToSign += requestBody;
-        MessageDigest digestProvider = MessageDigest.getInstance("SHA-256");
-        digestProvider.reset();
-
-        byte[] digest = digestProvider.digest(stringToSign.getBytes(apiCharset));
-        String signedInput = base64Encoder.encodeBase64String(digest);
-
-        return encodeURI(signedInput.substring(0, 43));
-    }
-
-    /**
-     * Generates the signature for a request without a body
-     *
-     * @param HTTPMethod The method of the request (GET, POST, PUT, PATCH).
-     * @param requestPath The path of the request (i.e. /v2/players).
-     * @param parameters The query parameters.
-     * @return The signature that should be added to the request URI as the signature parameter.
-     * @throws NoSuchAlgorithmException if the SHA256 algorithm is not available.
-     * @throws IOException
-     */
-    public String generateSignature(String HTTPMethod, String requestPath, HashMap<String, String> parameters) throws NoSuchAlgorithmException, IOException {
-        return generateSignature(HTTPMethod, requestPath, parameters, null);
     }
 
     /**
@@ -300,23 +193,23 @@ public class OoyalaAPI {
 
     /**
      * Sends a Request to the URL using the indicating HTTP method, content type and the array of bytes as body
-     * @param HTTPMethod The HTTPMethod
+     * @param httpMethod The HTTPMethod
      * @param URL The URL where the request is made
      * @param requestBody The request's body as an array of bytes
      * @return The response from the server as an object of class Object. Must be casted to either a LinkedList<String> or an HashMap<String, Object>
      * @throws IOException
      * @throws HttpStatusCodeException
      */
-    public Object sendRequest(String HTTPMethod, String URL, byte[] requestBody) throws IOException,
+    public Object sendRequest(String httpMethod, String URL, byte[] requestBody) throws IOException,
         HttpStatusCodeException {
-        HttpRequestBase method = getHttpMethod(HTTPMethod, URL, new ByteArrayEntity(requestBody));
+        HttpRequestBase method = getHttpMethod(httpMethod, URL, new ByteArrayEntity(requestBody));
         return executeRequest(method);
     }
 
     /**
      * Creates a request to a given path using the indicated HTTP-Method with a (string) body
      *
-     * @param HTTPMethod The HTTP method (verb)
+     * @param httpMethod The HTTP method (verb)
      * @param requestPath The request path
      * @param parameters The query parameters
      * @param requestBody The request's body
@@ -326,7 +219,7 @@ public class OoyalaAPI {
      * @throws HttpStatusCodeException
      */
     @SuppressWarnings("rawtypes")
-    public Object sendRequest(String HTTPMethod, String requestPath, HashMap<String, String> parameters,
+    public Object sendRequest(String httpMethod, String requestPath, HashMap<String, String> parameters,
                               HashMap<String, Object> requestBody) throws NoSuchAlgorithmException, IOException,
         HttpStatusCodeException {
         String jsonBody = "";
@@ -335,9 +228,10 @@ public class OoyalaAPI {
             jsonBody = JSONValue.toJSONString((Map) requestBody);
         }
 
-        String url = generateURLWithAuthenticationParameters(HTTPMethod, requestPath, parameters, jsonBody);
+        String url = generateURLWithAuthenticationParameters(httpMethod, getFixedRequestPath(requestPath),
+                parameters, jsonBody);
 
-        HttpRequestBase method = getHttpMethod(HTTPMethod, url, new StringEntity(jsonBody, apiCharset));
+        HttpRequestBase method = getHttpMethod(httpMethod, url, new StringEntity(jsonBody, HttpUtils.API_CHARSET));
         return executeRequest(method);
     }
 
@@ -345,41 +239,41 @@ public class OoyalaAPI {
      * Creates a request to a given path (requestPath) using the indicated HTTP-Method (HTTPMethod) wit neither
      * parameters nor a body (requestBody)
      *
-     * @param HTTPMethod The HTTP method
+     * @param httpMethod The HTTP method
      * @param requestPath the request path
      * @return The response from the server as an object of class Object. Must be casted to either a LinkedList<String> or an HashMap<String, Object>
      * @throws IOException
      * @throws NoSuchAlgorithmException
      * @throws HttpStatusCodeException
      */
-    public Object sendRequest(String HTTPMethod, String requestPath) throws IOException,
+    public Object sendRequest(String httpMethod, String requestPath) throws IOException,
         NoSuchAlgorithmException, HttpStatusCodeException {
-        return sendRequest(HTTPMethod, requestPath, new HashMap<String, String>(), new HashMap<String, Object>());
+        return sendRequest(httpMethod, getFixedRequestPath(requestPath), new HashMap<String, String>(), new HashMap<String, Object>());
     }
 
     /**
      * Creates an instance of HttpRequestBase's subclass (HttpGet, HttpDelete, etc).
-     * @param HTTPMethod The HTTPMethod string name
+     * @param httpMethod The HTTPMethod string name
      * @param URL The URL
      * @param entity the entity carrying the request's content
      * @return An instance of a HttpRequestBase's subclass
      */
-    private HttpRequestBase getHttpMethod(String HTTPMethod, String URL, AbstractHttpEntity entity) {
+    private HttpRequestBase getHttpMethod(String httpMethod, String URL, AbstractHttpEntity entity) {
         HttpRequestBase method = null;
         entity.setContentType(contentType);
         /* create the method object */
-        if (HTTPMethod.toLowerCase().contentEquals("get")) {
+        if (httpMethod.toLowerCase().contentEquals("get")) {
             method = new HttpGet(URL);
-        } else if (HTTPMethod.toLowerCase().contentEquals("delete")) {
+        } else if (httpMethod.toLowerCase().contentEquals("delete")) {
             method = new HttpDelete(URL);
         } else {
-            if (HTTPMethod.toLowerCase().contentEquals("post")) {
+            if (httpMethod.toLowerCase().contentEquals("post")) {
                 method = new HttpPost(URL);
                 ((HttpPost) method).setEntity(entity);
-            } else if (HTTPMethod.toLowerCase().contentEquals("patch")) {
+            } else if (httpMethod.toLowerCase().contentEquals("patch")) {
                 method = new HttpPatch(URL);
                 ((HttpPatch) method).setEntity(entity);
-            } else if (HTTPMethod.toLowerCase().contentEquals("put")) {
+            } else if (httpMethod.toLowerCase().contentEquals("put")) {
                 method = new HttpPut(URL);
                 ((HttpPut) method).setEntity(entity);
             }
@@ -389,7 +283,7 @@ public class OoyalaAPI {
 
     /**
      * Generate the URL including the authentication parameters
-     * @param HTTPMethod The HTTP Method
+     * @param httpMethod The HTTP Method
      * @param requestPath The request's path
      * @param parameters The query parameters
      * @param requestBody The string request body
@@ -398,15 +292,14 @@ public class OoyalaAPI {
      * @throws IOException
      */
     @SuppressWarnings("unchecked")
-    private String generateURLWithAuthenticationParameters(String HTTPMethod, String requestPath,
+    private String generateURLWithAuthenticationParameters(String httpMethod, String requestPath,
                                                            HashMap<String, String> parameters,
                                                            String requestBody) throws NoSuchAlgorithmException, IOException {
         HashMap<String, String> parametersWithAuthentication = (HashMap<String, String>) parameters.clone();
-        parametersWithAuthentication.put("api_key", apiKey);
-        parametersWithAuthentication.put("expires", String.format("%d", getExpiration()));
-        String signature = generateSignature(HTTPMethod.toUpperCase(), requestPath, parametersWithAuthentication, requestBody);
+
+        String signature = signatureGenerator.generateSignature(httpMethod.toUpperCase(), requestPath, parametersWithAuthentication, requestBody, null);
         parametersWithAuthentication.put("signature", signature);
-        return buildURL(HTTPMethod, requestPath, parametersWithAuthentication);
+        return buildURL(httpMethod, requestPath, parametersWithAuthentication);
     }
 
     /**
@@ -469,9 +362,8 @@ public class OoyalaAPI {
     public Object sendRequest(String HTTPMethod, String requestPath, HashMap<String, String> parameters,
                               byte[] requestBody) throws NoSuchAlgorithmException, IOException,
         HttpStatusCodeException {
-        String url = generateURLWithAuthenticationParameters(HTTPMethod, requestPath, parameters,
-            new String(requestBody, apiCharset));
-        System.out.println(url);
+        String url = generateURLWithAuthenticationParameters(HTTPMethod, getFixedRequestPath(requestPath), parameters,
+            new String(requestBody, HttpUtils.API_CHARSET));
         HttpRequestBase method = getHttpMethod(HTTPMethod, url, new ByteArrayEntity(requestBody));
         return executeRequest(method);
     }
@@ -492,7 +384,7 @@ public class OoyalaAPI {
             String value = parameters.get(key);
             /* just URI encode non-authentication params*/
             if (!(key.equals("expires") || key.equals("api_key") || key.equals("signature"))) {
-                URIParameters.put(key, encodeURI(parameters.get(key)));
+                URIParameters.put(key, HttpUtils.encodeURI(parameters.get(key)));
             } else
                 URIParameters.put(key, value);
         }
@@ -513,7 +405,7 @@ public class OoyalaAPI {
      */
     public String buildURL(String HTTPMethod, String requestPath, HashMap<String,
         String> parameters) throws java.security.NoSuchAlgorithmException, java.io.UnsupportedEncodingException {
-        return String.format("%s%s?%s", baseURL, requestPath, concatenateParams(makeURIValues(parameters), "&"));
+        return String.format("%s%s?%s", baseURL, requestPath, HttpUtils.concatenateParams(makeURIValues(parameters), "&"));
     }
 
     /**
@@ -603,6 +495,19 @@ public class OoyalaAPI {
     public Object patchRequest(String requestPath, HashMap<String, Object> requestBody)
         throws IOException, NoSuchAlgorithmException, HttpStatusCodeException {
         return sendRequest("PATCH", requestPath, new HashMap<String, String>(), requestBody);
+    }
+
+    /**
+     * This is to keep the api backward compatible, the /v2/ prefix was not needed in earlier versions, and baseURL
+     * itself had /v2/ as part of it. But this wouldn't work with v3 api urls. So now requestPath needs to have /v2/
+     * or /v3/ in it. If it is not present we add /v2/ prefix
+     */
+    private String getFixedRequestPath(String requestPath) {
+
+        if(!requestPath.startsWith("/v2/") && !requestPath.startsWith("/v3/")) {
+            requestPath = "/v2/" + requestPath;
+        }
+        return requestPath;
     }
 
     /**
