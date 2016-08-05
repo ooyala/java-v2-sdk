@@ -36,3 +36,5 @@ Now that we have our results on the assets ArrayList, lets print them out to the
 It's that easy to work with this SDK!
 
 We use json-simple to parse and encode JSON. Please visit http://code.google.com/p/json-simple/ for more information on supported classes when creating your body HashMap.
+
+[More examples](src/test/java/com/ooyala/api/OoyalaApiTest.java)
