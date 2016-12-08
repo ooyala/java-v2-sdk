@@ -4,14 +4,15 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.HashMap;
+import java.util.Map;
 
 public class OoyalaApiTest {
-  private String API_KEY = System.getProperty("ooyala_apikey");
-  private String API_SECRET = System.getProperty("ooyala_apisecret");
+  private String apikey = System.getProperty("ooyala_apikey");
+  private String apisecret = System.getProperty("ooyala_apisecret");
 
   @Test
   public void testV2Assets() throws Exception {
-    OoyalaAPI ooyalaApiClient = new OoyalaAPI(API_KEY, API_SECRET);
+    OoyalaAPI ooyalaApiClient = new OoyalaAPI(apikey, apisecret);
     Object performanceTotal = ooyalaApiClient.getRequest("assets");
     System.out.println(performanceTotal);
   }
@@ -19,7 +20,7 @@ public class OoyalaApiTest {
   @Ignore(value = "This test fails due to 'Internal API connection error'")
   @Test
   public void testV2AccountPerformance() throws Exception {
-    OoyalaAPI ooyalaApiClient = new OoyalaAPI(API_KEY, API_SECRET);
+    OoyalaAPI ooyalaApiClient = new OoyalaAPI(apikey, apisecret);
     Object performanceTotal = ooyalaApiClient
         .getRequest("analytics/reports/account/performance/total/2014-01-01...2014-05-01");
     System.out.println(performanceTotal);
@@ -28,8 +29,8 @@ public class OoyalaApiTest {
   @Ignore(value = "This test fails due to 'Internal API connection error'")
   @Test
   public void testV2AssetPerformance() throws Exception {
-    OoyalaAPI ooyalaApiClient = new OoyalaAPI(API_KEY, API_SECRET);
-    HashMap<String, String> params = new HashMap<String, String>();
+    OoyalaAPI ooyalaApiClient = new OoyalaAPI(apikey, apisecret);
+    Map<String, String> params = new HashMap<String, String>();
     params.put("limit", "25");
     params.put("limit", "25");
     params.put("limit", "25");
@@ -42,8 +43,8 @@ public class OoyalaApiTest {
 
   @Test
   public void testV3AnalyticsReport() throws Exception {
-    OoyalaAPI ooyalaApiClient = new OoyalaAPI(API_KEY, API_SECRET);
-    HashMap<String, String> params = new HashMap<String, String>();
+    OoyalaAPI ooyalaApiClient = new OoyalaAPI(apikey, apisecret);
+    Map<String, String> params = new HashMap<String, String>();
     params.put("report_type", "performance");
     params.put("start_date", "2016-06-01");
     params.put("end_date", "2016-06-02");
